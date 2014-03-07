@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="en"><head><!-- Meta--><meta charset="utf-8"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>inverse.js | Dev @ Work</title><meta name="description" content="A day in the life of a developer"><meta name="keywords" content="Trilobyte, Bert Willems, Dev @ Work, dev at work, Bert, Willems, developer, software, programmer, lead developer, architect, JavaScript, dotNET, javascript, dependency injection, nodejs"><meta name="author" content="Bert Willems"><meta name="generator" content="DocPad v6.64.0" /><meta name="viewport" content="width=device-width"><!-- Icons--><link rel="shortcut icon" href="/ico/favicon.gif"><!--[if lt IE 9]><script async src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]--><!-- Styles--><link  rel="stylesheet" href="/vendor/prettify.css" /><link  rel="stylesheet" href="/vendor/components-bootstrap/css/bootstrap.css" /><link  rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" /><link  rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,400,400italic|Open+Sans+Condensed:300,700" /><link  rel="stylesheet" href="/styles/style.css" /><!-- RSS--><link rel="alternate" type="application/rss+xml" title="Post RSS feed - Dev@Work" href="/rss.xml"></head><body><div class="container"><div class="row top"><div class="col-lg-8 col-md-8 col-sm-7 col-left"><div class="brand"><a href="/">Dev @ Work.nl</a></div></div><div class="col-lg-4 col-md-4 col-sm-5 col-right"><nav><ul class="list-inline"><li><a href="/pages/posts">Blog</a></li><li><a href="/pages/projects">Projects</a></li><li><a href="/pages/presentations">Presentations</a></li><li><a href="/pages/about">About</a></li><li class="social"><a href="https://www.facebook.com/devatwork" title="facebook"><i class="fa fa-facebook-square"></i></a><a href="https://github.com/devatwork" title="github"><i class="fa fa-github-square"></i></a><a href="https://plus.google.com/111880992300867132101/" title="google plus"><i class="fa fa-google-plus-square"></i></a><a href="http://nl.linkedin.com/in/trilobyte" title="linkedin"><i class="fa fa-linkedin-square"></i></a><a href="https://twitter.com/devatwork" title="twitter"><i class="fa fa-twitter-square"></i></a></li></ul></nav></div></div><div class="row bottom"><div class="col-lg-8 col-md-8 col-sm-7 col-left"><section class="content"><article class="project"><hgroup><h1>inverse.js</h1></hgroup><div class="panel panel-primary"><div class="panel-heading">Details</div><div class="panel-body"><dl class="dl-horizontal"><dt>Tags</dt><dd class="tags"><span class="tag">javascript</span><span class="tag">dependency injection</span><span class="tag">nodejs</span></dd><dt>GitHub</dt><dd><a href="https://github.com/devatwork/inverse.js">https://github.com/devatwork/inverse.js</a></dd><dt>NPM</dt><dd><a href="https://npmjs.org/package/inverse.js">https://npmjs.org/package/inverse.js</a></dd><dt>TravisCI</dt><dd><a href="https://travis-ci.org/devatwork/inverse.js"><img src="https://travis-ci.org/devatwork/inverse.js.png?branch=master" alt="Build Status"/></a></dd></dl></div></div><div class="post-content"><p>A DI container inspired by the AngularJS.</p>
+<h2 id="why-dependency-injection-">Why dependency injection?</h2>
+<p>Dependency injection is a software design pattern that allows the removal of hard-coded dependencies and makes it possible to change them, whether at run-time or compile-time.</p>
+<p>This can be used, for example, as a simple way to load plugins dynamically or to choose stubs or mock objects in test environments vs. real objects in production environments. This software design pattern injects the depended-on element (object or value, etc.) to the destination automatically by knowing the requirement of the destination. Another pattern, called dependency lookup, is a regular process and reverse process to dependency injection.</p>
+<p>One of its core principles is the separation of behavior from dependency resolution.</p>
+<h2 id="concepts">Concepts</h2>
+<p>Inverse.js is heavily inspired by the <em>DI Container</em> as implemented in <a href="http://angularjs.org/">AngularJS</a>, it derives most of its concepts from it as well.</p>
+<p>The main element is the DI container itself is called the <em>Injector</em>. Its goal is to resolve values from providers.</p>
+<p>A <em>Provider</em> is either an object or a function. Providers are, together with their declared dependencies, registered in the injector and the values they provide can be requested from the injector. If a provider is requested the injector injects its dependencies before returning it.</p>
+<p>Providers can be grouped into <em>Modules</em>. Modules get registered in the injector.</p>
+<h2 id="example">Example</h2>
+<pre class="highlight"><code class="javascript"><span class="keyword">var</span> di = require(<span class="string">'./inversejs'</span>);
+
+<span class="comment">// Define a Car object which needs an engine obviously</span>
+<span class="keyword">var</span> Car = <span class="function"><span class="keyword">function</span><span class="params">(engine)</span> {</span>
+    <span class="keyword">this</span>.start = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+        engine.start();
+    };
+};
+
+<span class="comment">// Define a factory which can create different type of engines</span>
+<span class="keyword">var</span> engineFactory = <span class="function"><span class="keyword">function</span><span class="params">(engineType)</span> {</span>
+    <span class="keyword">return</span> {
+        start: <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+            console.log(<span class="string">'Starting '</span> + engineType + <span class="string">' engine'</span>);
+        }
+    };
+};
+
+<span class="comment">// Create the drive module</span>
+<span class="keyword">var</span> carModule = <span class="keyword">new</span> di.Module(<span class="string">'driving'</span>);
+carModule.type(<span class="string">'car'</span>, Car);
+carModule.factory(<span class="string">'engine'</span>, engineFactory);
+carModule.constant(<span class="string">'engineType'</span>, <span class="string">'rocket'</span>);
+
+<span class="comment">// Create the injector</span>
+<span class="keyword">var</span> injector = <span class="keyword">new</span> di.Injector([carModule]);
+
+<span class="comment">// Execute a function using the injector, the dependencies will be injected</span>
+injector.invoke(<span class="function"><span class="keyword">function</span><span class="params">(car)</span> {</span>
+    car.start();
+});
+</code></pre>
+<h2 id="annotations">Annotations</h2>
+<p>Annotations are the way to declare the dependencies of a provider. There are several ways to declare them.</p>
+<h3 id="array-syntax">Array syntax</h3>
+<p>My personal favorite, clean syntax.</p>
+<pre class="highlight"><code class="javascript">module.run([<span class="string">'car'</span>, <span class="function"><span class="keyword">function</span><span class="params">(carInstance)</span> {</span>
+    carInstance.start();
+}]);
+</code></pre>
+<h3 id="method-arguments">Method arguments</h3>
+<p>Warning: this might break when used with minifiers.</p>
+<pre class="highlight"><code class="javascript">module.run(<span class="function"><span class="keyword">function</span><span class="params">(car)</span> {</span>
+    car.start();
+});
+</code></pre>
+<h3 id="-inject">$inject</h3>
+<p>Possibly the most clean way, since it seperates the concerns.</p>
+<pre class="highlight"><code class="javascript"><span class="keyword">var</span> startCar = <span class="function"><span class="keyword">function</span><span class="params">(car)</span> {</span>
+    car.start();
+};
+startCar.$inject = [<span class="string">'car'</span>];
+module.run(startCar);
+</code></pre>
+<h2 id="module-api">Module API</h2>
+<h3 id="constant-key-value-">constant(key, value)</h3>
+<p>Registers a constant value.</p>
+<pre class="highlight"><code class="javascript">module.constant(<span class="string">'engineType'</span>, <span class="string">'rocket'</span>);
+</code></pre>
+<h3 id="type-key-constructor-">type(key, Constructor)</h3>
+<p>If resolved, the <code>Constructor</code> will be called with the <code>new</code> operator to create an instance.</p>
+<pre class="highlight"><code class="javascript">module.type(<span class="string">'car'</span>, Car);
+</code></pre>
+<h3 id="factory-key-factoryfn-">factory(key, factoryFn)</h3>
+<p>If resolved, the <code>factoryFn</code> will be invoked to produce an instance.</p>
+<pre class="highlight"><code class="javascript">module.factory(<span class="string">'engine'</span>, engineFactory);
+</code></pre>
+<h3 id="decorator-key-decoratefn-">decorator(key, decorateFn)</h3>
+<p>If resolved, the <code>decorateFn</code> will be invoked to decorate an produced instance identified by the <code>key</code>. The <code>$delegate</code> argument hold the instance.</p>
+<pre class="highlight"><code class="javascript">module.decorator(<span class="string">'engine'</span>, [<span class="string">'$delegate'</span>, <span class="function"><span class="keyword">function</span><span class="params">($delegate)</span> {</span>
+    <span class="comment">// Modify the $delegate here</span>
+    <span class="keyword">return</span> $delegate;
+}];
+</code></pre>
+<h3 id="run-runfn-">run(runFn)</h3>
+<p>Registers a <code>runFn</code> callback which will be invoked after the injector is initialized.</p>
+<pre class="highlight"><code class="javascript">module.run(<span class="function"><span class="keyword">function</span><span class="params">(car)</span> {</span>
+    car.start(); <span class="comment">// Lets get going!</span>
+});
+</code></pre>
+<h2 id="injector-api">Injector API</h2>
+<h3 id="instantiate-type-locals-">instantiate(Type, locals)</h3>
+<p>Instantiates the given <code>Type</code>, the construct arguments of the <code>Type</code> are injected. <code>Type</code> is either the constructor function or a string. If it is a string, it is assumed to be a registered type key, which is resolved first. <code>locals</code> is an optional object and if present then any argument names are read from this object first, before the $injector is consulted.</p>
+<pre class="highlight"><code class="javascript"><span class="keyword">var</span> car1 = injector.instantiate(Car); <span class="comment">// Creates an instance of the Car</span>
+<span class="keyword">var</span> car2 = injector.instantiate(<span class="string">'car'</span>); <span class="comment">// Resolves car type by key an instantiates it</span>
+</code></pre>
+<h3 id="get-key-">get(key)</h3>
+<p>Gets the value from the provider identified by key.</p>
+<pre class="highlight"><code class="javascript"><span class="keyword">var</span> car = injector.get(<span class="string">'car'</span>);
+</code></pre>
+<h3 id="invoke-fn-self-locals-">invoke(fn, self, locals)</h3>
+<p>Invoke the method and supply the method arguments from this injector. <code>fn</code> is the function to invoke, its arguments are injected. <code>self</code> it the optional <code>this</code> binding of <code>fn</code>. <code>locals</code> is an optional object and if present then any argument names are read from this object first, before the $injector is consulted.</p>
+<pre class="highlight"><code class="javascript">injector.invoke(<span class="function"><span class="keyword">function</span><span class="params">(car)</span> {</span>
+    car.start();
+});
+</code></pre>
+<h2 id="release-history">Release History</h2>
+<ul>
+<li>2014-01-05   v0.0.1   Development release.</li>
+</ul>
+<h2 id="contributing">Contributing</h2>
+<p>In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using <a href="http://gruntjs.com/">Grunt</a>.</p>
+<h2 id="copyright">Copyright</h2>
+<p>Copyright (c) 2013 Bert Willems and contributors.</p>
+<h2 id="license">License</h2>
+<p>This project is licensed under <a href="http://www.opensource.org/licenses/mit-license.php" title="Read more about the MIT license form">MIT</a>. Refer to LICENCE for more information.</p>
+</div></article></section></div><div class="col-lg-4 col-md-4 col-sm-5 col-right"><section class="sidebar"><div class="panel panel-primary"><div class="panel-heading">Recent posts</div><ul class="list-group"><li class="list-group-item"><a href="/posts/2014/bye-old-stack-hello-new-stack">Bye old stack, hello 2014 stack</a></li><li class="list-group-item"><a href="/posts/2011/software-complexity">Software Complexity – Decomposing an Application</a></li><li class="list-group-item"><a href="/posts/2010/solving-the-portlet-design-problem">Solving the Portlet Design Problem</a></li><li class="list-group-item"><a href="/posts/2010/building-kluwer-support-portal">Building Kluwer Support Portal - a Developers Perspective</a></li><li class="list-group-item"><a href="/posts/2009/improve-your-site-search-engine">Extending your Successful Website: Improve your Search Engine</a></li></ul><div class="panel-footer clearfix"><a href="/pages/posts" class="pull-right">All posts&nbsp;<i class="fa fa-chevron-right"></i></a></div></div><div class="panel panel-primary"><div class="panel-heading">All projects</div><ul class="list-group"><li class="list-group-item"><a href="/projects/grunt-gluejs2">grunt-gluejs2</a></li><li class="list-group-item"><a href="/projects/inversejs">inverse.js</a></li></ul></div></section></div></div></div><!-- Scripts--><script >(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-4409537-1');
+ga('send', 'pageview');</script><script defer="defer"  src="/vendor/prettify.js"></script><script defer="defer"  src="/vendor/jquery/jquery.js"></script><script defer="defer"  src="/vendor/components-bootstrap/js/bootstrap.js"></script><script defer="defer"  src="/vendor/log.js"></script><script defer="defer"  src="/vendor/modernizr.js"></script><script defer="defer"  src="/scripts/script.js"></script></body></html>

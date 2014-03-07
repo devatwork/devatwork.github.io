@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><!-- Meta--><meta charset="utf-8"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>Microsoft Intermediate Language | Dev @ Work</title><meta name="description" content="A day in the life of a developer"><meta name="keywords" content="Trilobyte, Bert Willems, Dev @ Work, dev at work, Bert, Willems, developer, software, programmer, lead developer, architect, JavaScript, dotNET, dotnet, msil, csharp"><meta name="author" content="Bert Willems"><meta name="generator" content="DocPad v6.64.0" /><meta name="viewport" content="width=device-width"><!-- Icons--><link rel="shortcut icon" href="/ico/favicon.gif"><!--[if lt IE 9]><script async src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]--><!-- Styles--><link  rel="stylesheet" href="/vendor/prettify.css" /><link  rel="stylesheet" href="/vendor/components-bootstrap/css/bootstrap.css" /><link  rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" /><link  rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,400,400italic|Open+Sans+Condensed:300,700" /><link  rel="stylesheet" href="/styles/style.css" /><!-- RSS--><link rel="alternate" type="application/rss+xml" title="Post RSS feed - Dev@Work" href="/rss.xml"></head><body><div class="container"><div class="row top"><div class="col-lg-8 col-md-8 col-sm-7 col-left"><div class="brand"><a href="/">Dev @ Work.nl</a></div></div><div class="col-lg-4 col-md-4 col-sm-5 col-right"><nav><ul class="list-inline"><li><a href="/pages/posts">Blog</a></li><li><a href="/pages/projects">Projects</a></li><li><a href="/pages/presentations">Presentations</a></li><li><a href="/pages/about">About</a></li><li class="social"><a href="https://www.facebook.com/devatwork" title="facebook"><i class="fa fa-facebook-square"></i></a><a href="https://github.com/devatwork" title="github"><i class="fa fa-github-square"></i></a><a href="https://plus.google.com/111880992300867132101/" title="google plus"><i class="fa fa-google-plus-square"></i></a><a href="http://nl.linkedin.com/in/trilobyte" title="linkedin"><i class="fa fa-linkedin-square"></i></a><a href="https://twitter.com/devatwork" title="twitter"><i class="fa fa-twitter-square"></i></a></li></ul></nav></div></div><div class="row bottom"><div class="col-lg-8 col-md-8 col-sm-7 col-left"><section class="content"><article id="post" class="post"><hgroup><h1>Microsoft Intermediate Language</h1><h2>Wed May 23 2007</h2><h3><span class="tag">dotnet</span><span class="tag">msil</span><span class="tag">csharp</span></h3></hgroup><div class="post-content"><p>In deze post zal ik vertellen over Microsoft intermediate language: de assembly taal van het .NET platform, wat je er mee kunt, waarom je het zou gebruiken en hoe je het gebruikt.</p><h2>Microsoft Intermediate Language</h2><p>Microsoft Intermediate Language (MSIL, IL) is de assembly taal van het .NET platform. Met deze taal kun je alle mogelijkheden, waar het .NET platform over beschikt, ten volste benutten. De meeste programmeertalen voor .NET, zoals C# en VB.NET, kunnen de mogelijkheden van .NET niet volledig benutten, omdat er bepaalde elementen niet uitgedrukt kunnen worden. Ook kan de taal gebruikt worden om runtime nieuwe programma code aan te maken.</p><p>MSIL wordt door de Common Language Runtime omgezet naar door de processor uitvoerbare instructies. Tijdens deze compilatie worden er optimalisatie uitgevoerd, zodat het systeem zo optimaal mogelijk wordt benut.</p><h2>Praktisch Gebruik</h2><p>In dit hoofdstuk zal ik een voorbeeld geven van het praktisch toepassen van mijn kennis van IL in een echte applicatie. De applicatie waar het om gaat is een bibliotheek waarmee er met Aspect Oriented Programming (AOP) kan worden gewerkt. De IL code wordt gebruikt om realtime een proxy te creÃ«ren.</p><p>De bibliotheek bestaat uit een definitie van een callback delegate en een proxy fabriek. Door gebruik te maken van de proxy kun je dynamisch een aanroep van een functie afvangen en bekijken voordat een functie uitgevoerd is. Helaas heb ik (nog) niet de tijd gehad om een hier een kwalitatief hoogwaardige bibliotheek van te maken.</p><h2>Voorbeeld</h2><p>Om een indruk te geven van wat IL nou eigenlijk inhoud, zal ik een voorbeeld geven van code die ik geschreven en gedocumenteerd heb. Het programma is een console applicatie dat de gebruiker vraagt om een getal in te voeren en controleert vervolgens of het ingevoerde getal even, oneven of geen getal is.</p><pre class="highlight"><code class="cs">.assembly <span class="keyword">extern</span> mscorlib {auto}
+.assembly OddOrEven {}
+.module OddOrEven.exe
+
+.<span class="keyword">namespace</span> Odd.or
+{
+ .<span class="keyword">class</span> <span class="keyword">public</span> auto ansi Even extends [mscorlib]System.Object
+ {
+  .field <span class="keyword">public</span> <span class="keyword">static</span> int32 val
+  
+  .method <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> check() cil managed
+  {
+   .entrypoint
+   .locals init (int32 RetVal)
+   
+  AskForNumber:
+   <span class="comment">// Vraag om een nummer</span>
+   ldstr <span class="string">"Enter a number"</span>
+   call <span class="keyword">void</span> [mscorlib]System.Console::WriteLine(<span class="keyword">string</span>)
+   
+   .<span class="keyword">try</span>
+   {
+    call <span class="keyword">string</span> [mscorlib]System.Console::ReadLine()        <span class="comment">// lees de ingevoerde tekst</span>
+    ldstr <span class="string">"%d"</span>                                                                                    <span class="comment">// laad "%d" naar de stack, %d parst een getal, zie sscanf documentatie voor details</span>
+    ldsflda int32 Odd.or.Even::val                                            <span class="comment">// laad het adres van de waarde waarin de geparste tekst gezet moet worden</span>
+    call vararg int32 sscanf(<span class="keyword">string</span>,<span class="keyword">string</span>,...,int32*)    <span class="comment">// parse de ingevoerde tekst, de return waarde geeft aan of de parse succesvol was</span>
+    stloc<span class="number">.0</span>                                                                                            <span class="comment">// sla de geretourneerde waarde op</span>
+    leave.s DidntBlowUp                                                                    <span class="comment">// er zijn geen excepties opgetreden</span>
+   }
+   <span class="keyword">catch</span> [mscorlib]System.Exception
+   {
+    <span class="comment">// haalt de geretourneerde e waarde van de aanroep naar sscanf van de evaluatie stack</span>
+    pop
+    
+    <span class="comment">// geef het berich weer dat er een exceptie is opgetreden</span>
+    ldstr <span class="string">"Kaboom!"</span>
+    call <span class="keyword">void</span> [mscorlib]System.Console::WriteLine(<span class="keyword">string</span>)
+    
+    <span class="comment">// spring naar het einde van de functie</span>
+    leave.s Return
+   }
+   
+  DidntBlowUp:
+   ldloc<span class="number">.0</span>                                                    <span class="comment">// laad de geretourneerde waarde van de aanroep naar sscanf</span>
+   brfalse.s Error                                    <span class="comment">// springt naar Error wanneer de waarde 0 is</span>
+   
+   ldsfld int32 Odd.or.Even::val        <span class="comment">// laad de geparste integer</span>
+   ldc.i4<span class="number">.1</span>                                                <span class="comment">// laad 1</span>
+   and                                                            <span class="comment">// bitwise and</span>
+   brfalse.s ItsEven                                <span class="comment">// springt naar ItsEven wanneer het laatste bit 0 is</span>
+   
+   ldstr <span class="string">"Odd!"</span>
+   br.s PrintAndReturn
+   
+  ItsEven:
+   ldstr <span class="string">"Even!"</span>
+   br.s PrintAndReturn
+   
+  Error:
+   ldstr <span class="string">"How rude!"</span>
+   
+  PrintAndReturn:
+   call <span class="keyword">void</span> [mscorlib]System.Console::WriteLine(<span class="keyword">string</span>)
+   ldloc<span class="number">.0</span>
+   brtrue.s AskForNumber
+   
+  Return:
+   ret
+  }
+ }
+}
+
+<span class="comment">// definieer de sscanf functie</span>
+.method <span class="keyword">public</span> <span class="keyword">static</span> pinvokeimpl(<span class="string">"msvcrt.dll"</span> cdecl)    vararg int32 sscanf(<span class="keyword">string</span>,<span class="keyword">string</span>) cil managed { }
+</code></pre><p>Het programma demonstreert ook het gebruik van unmanaged code door middel van een aanroep met behulp van pinvoke. Om dit programma uit te voeren heb je de .NET 2.0 SDK nodig. Kopier de bovenstaande code in een bestand en noem dit OddOrEven.il. Voer het volgende commando uit met de SDK commandline: ilasm OddOrEven.il.</p><h2>Conclusie</h2><p>De Microsoft Intermediate Language is een krachtige programmeer taal om de mogelijkheden van het .NET platform tot het uiterste te benutten. Het programmeren in IL is echter niet zo eenvoudig als het is met bijvoorbeeld C#, er is veel kennis en discipline voor nodig. Ook het ontwikkelen in IL is erg tijdrovend. Mijn ervaring is dat je voor de meeste taken C#/VB.NET het beste kunt gebruiken, maar voor specifieke taken IL, bijvoorbeeld bij het optimaliseren van de snelheid of het geheugengebruik van een applicatie. Eigenlijk is het hetzelfde als bij het ontwikkelen in C waar je assembly gebruikt voor de meest kritische gedeelten. Ook voor het dynamisch generen van .NET types is IL een uitstekende keus.</p></div></article><div class="social-buttons"><div class="twitter-tweet-button service-button">
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="devatwork" data-related="devatwork">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</div><div class="google-plus-one-button service-button">
+	<div class="g-plusone" data-size="medium" data-href="http%3A//devatwork.nl/posts/2007/msil"></div>
+	<script>
+		(function() {
+			var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+			po.src = 'https://apis.google.com/js/plusone.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+		})();
+	</script>
+</div><div class="reddit-submit-button service-button">
+	<script type="text/javascript" src="http://en.reddit.com/static/button/button1.js"></script>
+</div><div class="twitter-follow-button service-button">
+	<a href="https://twitter.com/devatwork" class="twitter-follow-button" data-show-count="false">Follow @devatwork</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</div><div class="github-follow-button service-button">
+	<iframe src="//ghbtns.com/github-btn.html?user=devatwork&amp;type=follow&amp;count=true" allowtransparency="true" frameborder="0" scrolling="0" width="165" height="20"></iframe>
+</div></div><div class="navlinks">
+  
+  <a href="/posts/2008/software-quality" title="Next Post: Software Quality" class="navlinks-next">Software Quality &raquo;</a>
+</div><footer></footer></section></div><div class="col-lg-4 col-md-4 col-sm-5 col-right"><section class="sidebar"><div class="panel panel-primary"><div class="panel-heading">Recent posts</div><ul class="list-group"><li class="list-group-item"><a href="/posts/2014/bye-old-stack-hello-new-stack">Bye old stack, hello 2014 stack</a></li><li class="list-group-item"><a href="/posts/2011/software-complexity">Software Complexity – Decomposing an Application</a></li><li class="list-group-item"><a href="/posts/2010/solving-the-portlet-design-problem">Solving the Portlet Design Problem</a></li><li class="list-group-item"><a href="/posts/2010/building-kluwer-support-portal">Building Kluwer Support Portal - a Developers Perspective</a></li><li class="list-group-item"><a href="/posts/2009/improve-your-site-search-engine">Extending your Successful Website: Improve your Search Engine</a></li></ul><div class="panel-footer clearfix"><a href="/pages/posts" class="pull-right">All posts&nbsp;<i class="fa fa-chevron-right"></i></a></div></div><div class="panel panel-primary"><div class="panel-heading">All projects</div><ul class="list-group"><li class="list-group-item"><a href="/projects/grunt-gluejs2">grunt-gluejs2</a></li><li class="list-group-item"><a href="/projects/inversejs">inverse.js</a></li></ul></div></section></div></div></div><!-- Scripts--><script >(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-4409537-1');
+ga('send', 'pageview');</script><script defer="defer"  src="/vendor/prettify.js"></script><script defer="defer"  src="/vendor/jquery/jquery.js"></script><script defer="defer"  src="/vendor/components-bootstrap/js/bootstrap.js"></script><script defer="defer"  src="/vendor/log.js"></script><script defer="defer"  src="/vendor/modernizr.js"></script><script defer="defer"  src="/scripts/script.js"></script></body></html>

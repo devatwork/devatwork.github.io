@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url> <loc>http://devatwork.nl/posts/2007/msil</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2008/software-quality</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2008/union-architecture</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2009/designing-a-shopping-cart</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2009/mvvm</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2009/baking-il-with-dynamicmethod</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2009/make-your-visitors-feel-home</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2009/improve-your-site-search-engine</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2010/building-kluwer-support-portal</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2010/solving-the-portlet-design-problem</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2011/software-complexity</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/presentations/automated-deployment-using-appharbor-and-myget</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/posts/2014/bye-old-stack-hello-new-stack</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/pages/projects</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/pages/posts</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/projects/grunt-gluejs2</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/projects/inversejs</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/presentations/angularjs-performance-best-practices</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/pages/about</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+<url> <loc>http://devatwork.nl/pages/presentations</loc> <changefreq>weekly</changefreq> <priority>0.5</priority> </url>
+</urlset>

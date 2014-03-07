@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang="en"><head><!-- Meta--><meta charset="utf-8"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><title>Model View ViewModel ( M-V-VM ) | Dev @ Work</title><meta name="description" content="A day in the life of a developer"><meta name="keywords" content="Trilobyte, Bert Willems, Dev @ Work, dev at work, Bert, Willems, developer, software, programmer, lead developer, architect, JavaScript, dotNET, wpf, dotnet, csharp"><meta name="author" content="Bert Willems"><meta name="generator" content="DocPad v6.64.0" /><meta name="viewport" content="width=device-width"><!-- Icons--><link rel="shortcut icon" href="/ico/favicon.gif"><!--[if lt IE 9]><script async src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]--><!-- Styles--><link  rel="stylesheet" href="/vendor/prettify.css" /><link  rel="stylesheet" href="/vendor/components-bootstrap/css/bootstrap.css" /><link  rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" /><link  rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,400,400italic|Open+Sans+Condensed:300,700" /><link  rel="stylesheet" href="/styles/style.css" /><!-- RSS--><link rel="alternate" type="application/rss+xml" title="Post RSS feed - Dev@Work" href="/rss.xml"></head><body><div class="container"><div class="row top"><div class="col-lg-8 col-md-8 col-sm-7 col-left"><div class="brand"><a href="/">Dev @ Work.nl</a></div></div><div class="col-lg-4 col-md-4 col-sm-5 col-right"><nav><ul class="list-inline"><li><a href="/pages/posts">Blog</a></li><li><a href="/pages/projects">Projects</a></li><li><a href="/pages/presentations">Presentations</a></li><li><a href="/pages/about">About</a></li><li class="social"><a href="https://www.facebook.com/devatwork" title="facebook"><i class="fa fa-facebook-square"></i></a><a href="https://github.com/devatwork" title="github"><i class="fa fa-github-square"></i></a><a href="https://plus.google.com/111880992300867132101/" title="google plus"><i class="fa fa-google-plus-square"></i></a><a href="http://nl.linkedin.com/in/trilobyte" title="linkedin"><i class="fa fa-linkedin-square"></i></a><a href="https://twitter.com/devatwork" title="twitter"><i class="fa fa-twitter-square"></i></a></li></ul></nav></div></div><div class="row bottom"><div class="col-lg-8 col-md-8 col-sm-7 col-left"><section class="content"><article id="post" class="post"><hgroup><h1>Model View ViewModel ( M-V-VM )</h1><h2>Sun Feb 15 2009</h2><h3><span class="tag">wpf</span><span class="tag">dotnet</span><span class="tag">csharp</span></h3></hgroup><div class="post-content"><p>Recently I have been working on a Windows Presentation Foundation (WPF) application designed to manage tasks. It is not the first time I developed an application in WPF. However, I was struggling with the same problem I was struggling with before:</p><p><strong>The problem: Coupling my views (WPF) to my domain model (C#).</strong></p><p>The solution I came up with back then is to make the domain model aware of the need to bind and implement specific functionality like [<a title="System.ComponentModel.INotifyPropertyChanged" href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged.aspx">System.ComponentModel.INotifyPropertyChanged</a>]. By doing this I cluttered my domain model with non domain model code, which made the model difficult to understand and maintain, basically: No Go!</p><p><strong>The solution: Model-View-ViewModel pattern</strong></p><p>I went out looking for pattern that could help me to eliminate this code cluttering. After doing some research using my favorite search engine I discovered that there was a pattern for this problem: Model - View - ViewModel (MVVM or M-V-VM).</p><p>This pattern basically says: just wrap your domain model in another model, the view model, and implement view specific logic (like: INotifyPropertyChanged) on that view model.</p><p>I also implemented my commands on this view model class, I could have factored it out to view controllers but I didn't see the need for that right now.</p><p>For the implementation of the commands I choose the solutions suggested by [<a title="Karl on WPF" href="http://karlshifflett.wordpress.com">Karl on WPF</a>] and [<a title="Josh Smith on WPF" href="http://joshsmithonwpf.wordpress.com/">Josh Smith</a>]: the RelayCommand class. The purpose of this class is to drastically reduce the number of command needed by providing a single class which takes a delegate to execute the actual command. It also contains some logic to hook into the WPF command infrastructure.</p><p>Here is my implementation of the RelayCommand in C#:</p><pre class="highlight"><code class="cs"><span class="keyword">public</span> <span class="keyword">class</span> RelayCommand: ICommand
+{
+ <span class="keyword">private</span> <span class="keyword">readonly</span> Predicate&lt;<span class="keyword">object</span>&gt; canExecuteMethod;
+ <span class="keyword">private</span> <span class="keyword">readonly</span> Action&lt;/<span class="keyword">object</span>&gt;&lt;<span class="keyword">object</span>&gt; executeMethod;
+ <span class="keyword">public</span> RelayCommand(Action&lt;/<span class="keyword">object</span>&gt;&lt;<span class="keyword">object</span>&gt; executeMethod): <span class="keyword">this</span>(executeMethod, <span class="keyword">null</span>) {}
+ 
+ <span class="keyword">public</span> RelayCommand(Action&lt;/<span class="keyword">object</span>&gt;&lt;<span class="keyword">object</span>&gt; executeMethod, Predicate&lt;/<span class="keyword">object</span>&gt;&lt;<span class="keyword">object</span>&gt; canExecuteMethod)
+ {
+  <span class="comment">// validate argument</span>
+  <span class="keyword">if</span> (executeMethod == <span class="keyword">null</span>)
+   <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"executeMethod"</span>);
+   
+  <span class="comment">// set values</span>
+  this.executeMethod = executeMethod;
+  this.canExecuteMethod = canExecuteMethod;
+ }
+ <span class="preprocessor">#<span class="keyword">region</span> ICommand Members</span>
+ <span class="comment"><span class="xmlDocTag">///</span><span class="xmlDocTag">&lt;summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span>Occurs when changes occur that affect whether or not the command can execute.</span>
+ <span class="comment"><span class="xmlDocTag">///</span><span class="xmlDocTag">&lt;/summary&gt;</span></span>
+ <span class="keyword">public</span> <span class="keyword">event</span> EventHandler CanExecuteChanged
+ {
+  add
+  {
+   <span class="keyword">if</span> (canExecuteMethod != <span class="keyword">null</span>)
+    CommandManager.RequerySuggested += <span class="keyword">value</span>;
+  }
+  remove
+  {
+   <span class="keyword">if</span> (canExecuteMethod != <span class="keyword">null</span>)
+    CommandManager.RequerySuggested -= <span class="keyword">value</span>;
+  }
+ }
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> Defines the method to be called when the command is invoked.</span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;/summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;param name="parameter"&gt;</span>Data used by the command.  If the command does not require data to be passed, this object can be set to null.<span class="xmlDocTag">&lt;/param&gt;</span></span>
+ <span class="keyword">public</span> <span class="keyword">void</span> Execute(<span class="keyword">object</span> parameter)
+ {
+  executeMethod(parameter);
+ }
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> Defines the method that determines whether the command can execute in its current state.</span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;/summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;returns&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> true if this command can be executed; otherwise, false.</span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;/returns&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;param name="parameter"&gt;</span>Data used by the command.  If the command does not require data to be passed, this object can be set to null.<span class="xmlDocTag">&lt;/param&gt;</span></span>
+ <span class="keyword">public</span> <span class="keyword">bool</span> CanExecute(<span class="keyword">object</span> parameter)
+ {
+  <span class="keyword">return</span> canExecuteMethod == <span class="keyword">null</span> ? <span class="keyword">true</span> : canExecuteMethod(parameter);
+ }
+ <span class="preprocessor">#<span class="keyword">endregion</span></span>
+ <span class="keyword">public</span> <span class="keyword">void</span> RaiseCanExecuteChanged(EventArgs e)
+ {
+  CommandManager.InvalidateRequerySuggested();
+ }
+}
+
+<span class="keyword">public</span> <span class="keyword">class</span> RelayCommand&lt;t&gt;: ICommand
+{
+ <span class="keyword">private</span> <span class="keyword">readonly</span> Predicate&lt;/t&gt;&lt;t&gt; canExecuteMethod;
+ <span class="keyword">private</span> <span class="keyword">readonly</span> Action&lt;/t&gt;&lt;t&gt; executeMethod;
+ <span class="keyword">public</span> RelayCommand(Action&lt;/t&gt;&lt;t&gt; executeMethod): <span class="keyword">this</span>(executeMethod, <span class="keyword">null</span>) {}
+ 
+ <span class="keyword">public</span> RelayCommand(Action&lt;/t&gt;&lt;t&gt; executeMethod, Predicate&lt;/t&gt;&lt;t&gt; canExecuteMethod)
+ {
+  <span class="comment">// validate argument</span>
+  <span class="keyword">if</span> (executeMethod == <span class="keyword">null</span>)
+   <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"executeMethod"</span>);
+   
+  <span class="comment">// set values</span>
+  this.executeMethod = executeMethod;
+  this.canExecuteMethod = canExecuteMethod;
+ }
+ <span class="preprocessor">#<span class="keyword">region</span> ICommand Members</span>
+ <span class="comment"><span class="xmlDocTag">///</span><span class="xmlDocTag">&lt;summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span>Occurs when changes occur that affect whether or not the command can execute.</span>
+ <span class="comment"><span class="xmlDocTag">///</span><span class="xmlDocTag">&lt;/summary&gt;</span></span>
+ <span class="keyword">public</span> <span class="keyword">event</span> EventHandler CanExecuteChanged
+ {
+  add
+  {
+   <span class="keyword">if</span> (canExecuteMethod != <span class="keyword">null</span>)
+    CommandManager.RequerySuggested += <span class="keyword">value</span>;
+  }
+  remove
+  {
+   <span class="keyword">if</span> (canExecuteMethod != <span class="keyword">null</span>)
+    CommandManager.RequerySuggested -= <span class="keyword">value</span>;
+  }
+ }
+ 
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> Defines the method to be called when the command is invoked.</span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;/summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;param name="parameter"&gt;</span>Data used by the command.  If the command does not require data to be passed, this object can be set to null.<span class="xmlDocTag">&lt;/param&gt;</span></span>
+ <span class="keyword">public</span> <span class="keyword">void</span> Execute(<span class="keyword">object</span> parameter)
+ {
+  executeMethod((T)parameter);
+ }
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> Defines the method that determines whether the command can execute in its current state.</span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;/summary&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;returns&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> true if this command can be executed; otherwise, false.</span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;/returns&gt;</span></span>
+ <span class="comment"><span class="xmlDocTag">///</span> <span class="xmlDocTag">&lt;param name="parameter"&gt;</span>Data used by the command.  If the command does not require data to be passed, this object can be set to null.<span class="xmlDocTag">&lt;/param&gt;</span></span>
+ <span class="keyword">public</span> <span class="keyword">bool</span> CanExecute(<span class="keyword">object</span> parameter)
+ {
+  <span class="keyword">return</span> canExecuteMethod == <span class="keyword">null</span> ? <span class="keyword">true</span> : canExecuteMethod((T)parameter);
+ }
+ <span class="preprocessor">#<span class="keyword">endregion</span></span>
+ <span class="keyword">public</span> <span class="keyword">void</span> RaiseCanExecuteChanged(EventArgs e)
+ {
+  CommandManager.InvalidateRequerySuggested();
+ }
+}
+</code></pre><p><strong>Conclusion</strong></p><p>The MVVM pattern is a great pattern which allows you to separate the WPF view from your domain model, preventing code cluttering. I recommend every WPF or Silverlight developer to look into this pattern and use it when you encounter the same problem I had.</p><p><strong>References:</strong></p><p><a title="Karl on WPF" href="http://karlshifflett.wordpress.com/mvvm/">http://karlshifflett.wordpress.com/mvvm/</a></p><p><a title="Josh Smith on WPF" href="http://joshsmithonwpf.wordpress.com/category/mvvm/">http://joshsmithonwpf.wordpress.com/category/mvvm/</a></t></object></p></div></article><div class="social-buttons"><div class="twitter-tweet-button service-button">
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="devatwork" data-related="devatwork">Tweet</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</div><div class="google-plus-one-button service-button">
+	<div class="g-plusone" data-size="medium" data-href="http%3A//devatwork.nl/posts/2009/mvvm"></div>
+	<script>
+		(function() {
+			var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+			po.src = 'https://apis.google.com/js/plusone.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+		})();
+	</script>
+</div><div class="reddit-submit-button service-button">
+	<script type="text/javascript" src="http://en.reddit.com/static/button/button1.js"></script>
+</div><div class="twitter-follow-button service-button">
+	<a href="https://twitter.com/devatwork" class="twitter-follow-button" data-show-count="false">Follow @devatwork</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</div><div class="github-follow-button service-button">
+	<iframe src="//ghbtns.com/github-btn.html?user=devatwork&amp;type=follow&amp;count=true" allowtransparency="true" frameborder="0" scrolling="0" width="165" height="20"></iframe>
+</div></div><div class="navlinks">
+  <a href="/posts/2009/designing-a-shopping-cart" title="Previous Post: Designing an Online Shopping Cart, an Architects Tale" class="navlinks-prev">&laquo; Designing an Online Shopping Cart, an Architects Tale</a>
+  <a href="/posts/2009/baking-il-with-dynamicmethod" title="Next Post: Baking IL With DynamicMethod" class="navlinks-next">Baking IL With DynamicMethod &raquo;</a>
+</div><footer></footer></section></div><div class="col-lg-4 col-md-4 col-sm-5 col-right"><section class="sidebar"><div class="panel panel-primary"><div class="panel-heading">Recent posts</div><ul class="list-group"><li class="list-group-item"><a href="/posts/2014/bye-old-stack-hello-new-stack">Bye old stack, hello 2014 stack</a></li><li class="list-group-item"><a href="/posts/2011/software-complexity">Software Complexity – Decomposing an Application</a></li><li class="list-group-item"><a href="/posts/2010/solving-the-portlet-design-problem">Solving the Portlet Design Problem</a></li><li class="list-group-item"><a href="/posts/2010/building-kluwer-support-portal">Building Kluwer Support Portal - a Developers Perspective</a></li><li class="list-group-item"><a href="/posts/2009/improve-your-site-search-engine">Extending your Successful Website: Improve your Search Engine</a></li></ul><div class="panel-footer clearfix"><a href="/pages/posts" class="pull-right">All posts&nbsp;<i class="fa fa-chevron-right"></i></a></div></div><div class="panel panel-primary"><div class="panel-heading">All projects</div><ul class="list-group"><li class="list-group-item"><a href="/projects/grunt-gluejs2">grunt-gluejs2</a></li><li class="list-group-item"><a href="/projects/inversejs">inverse.js</a></li></ul></div></section></div></div></div><!-- Scripts--><script >(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-4409537-1');
+ga('send', 'pageview');</script><script defer="defer"  src="/vendor/prettify.js"></script><script defer="defer"  src="/vendor/jquery/jquery.js"></script><script defer="defer"  src="/vendor/components-bootstrap/js/bootstrap.js"></script><script defer="defer"  src="/vendor/log.js"></script><script defer="defer"  src="/vendor/modernizr.js"></script><script defer="defer"  src="/scripts/script.js"></script></body></html>
